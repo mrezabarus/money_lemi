@@ -61,12 +61,40 @@ INSERT INTO child_budgets (parent_id, child_id, amount, start_date, end_date) VA
 
 ### INSERT CATEGORIES
 ```
-INSERT INTO categories (name, type) VALUES
-('Gaji', 'income'),
-('Bonus', 'income'),
-('Makanan', 'expense'),
-('Transport', 'expense'),
-('Shopping', 'expense');
+INSERT INTO categories (name, type, scope, description) VALUES
+('Gaji', 'income', 'personal', 'Penghasilan tetap bulanan'),
+('Bonus', 'income', 'personal', 'Penghasilan tambahan'),
+('Makanan', 'expense', 'personal', 'Makan/minum sehari-hari'),
+('Transport', 'expense', 'personal', 'Biaya transportasi'),
+('Shopping', 'expense', 'personal', 'Belanja kebutuhan non-pokok'),
+('Tagihan', 'expense', 'personal', 'Listrik, air, internet'),
+('Hiburan', 'expense', 'personal', 'Nonton, game, dll');
+
+
+
+INSERT INTO categories (name, type, scope, description) VALUES
+('Gaji', 'income', 'personal', 'Penghasilan tetap bulanan'),
+('Bonus', 'income', 'personal', 'Penghasilan tambahan'),
+('Makanan', 'expense', 'personal', 'Makan/minum sehari-hari'),
+('Transport', 'expense', 'personal', 'Biaya transportasi'),
+('Shopping', 'expense', 'personal', 'Belanja kebutuhan non-pokok'),
+('Tagihan', 'expense', 'personal', 'Listrik, air, internet'),
+('Hiburan', 'expense', 'personal', 'Nonton, game, dll');
+
+Business
+INSERT INTO categories (name, type, scope, description) VALUES
+('Penjualan', 'income', 'business', 'Hasil penjualan produk/jasa'),
+('Jasa', 'income', 'business', 'Pendapatan dari jasa'),
+('Bahan Baku', 'expense', 'business', 'Beli bahan/material produksi'),
+('Operasional', 'expense', 'business', 'Biaya operasional (gas, listrik, dll)'),
+('Pemasaran', 'expense', 'business', 'Iklan, promosi'),
+('Transport', 'expense', 'business', 'Ongkos kirim, delivery'),
+('Peralatan', 'expense', 'business', 'Beli peralatan/modal barang');
+
+-- Both
+INSERT INTO categories (name, type, scope) VALUES
+('Lainnya', 'income', 'both'),
+('Lainnya', 'expense', 'both');
 ```
 
 ### INSERT TRANSACTION
@@ -84,7 +112,6 @@ from transactions t
 left join child_budgets cb 
 on t.budget_id = cb.id
 where t.budget_id is null 
-WHERE cb.id = 1
 
 -- Sisa budget saat ini untuk budget_id = 1
 SELECT 
@@ -207,4 +234,35 @@ WHERE t.id_user = 1
   AND t.transaction_date >= CURRENT_DATE - INTERVAL '6 months'
 GROUP BY TO_CHAR(t.transaction_date, 'YYYY-MM')
 ORDER BY month DESC;
+```
+
+
+### BUSINESS
+```
+-- User (id=1) buat bisnis
+INSERT INTO businesses (user_id, name) VALUES (1, 'Jualan Gorengan');
+-- Hasil: business_id = 1
+
+-- Catat modal
+INSERT INTO business_capitals (business_id, amount, description) 
+VALUES (1, 500000, 'Modal awal');
+
+-- Transaksi bisnis (tanpa budget_id!)
+INSERT INTO business_transactions (business_id, category_id, amount, transaction_date, description)
+VALUES (
+    1,  -- business_id
+    (SELECT id FROM categories WHERE name = 'Bahan Baku' AND scope = 'business'),
+    200000,
+    '2026-02-02',
+    'Beli tepung 10kg'
+);
+
+INSERT INTO business_transactions (business_id, category_id, amount, transaction_date, description)
+VALUES (
+    1,
+    (SELECT id FROM categories WHERE name = 'Penjualan' AND scope = 'business'),
+    150000,
+    '2026-02-03',
+    'Jual gorengan'
+);
 ```

@@ -46,11 +46,12 @@ ADD CONSTRAINT check_role_valid CHECK (role IN ('admin', 'user'));
 -- Categories table (normalized for data integrity)
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,          -- e.g., 'Shopping', 'Gaji', 'Transport'
-    type VARCHAR(10) NOT NULL,          -- 'income' or 'expense'
+    name VARCHAR(50) NOT NULL,
+    type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
+    scope VARCHAR(20) DEFAULT 'personal' CHECK (scope IN ('personal', 'business', 'both')),
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(name, type)                  -- Prevent duplicate category names per type
+    UNIQUE(name, type, scope)  -- Hindari duplikat
 );
 ```
 
@@ -104,3 +105,50 @@ WHERE cb.id = 1
 GROUP BY cb.id, cb.amount;
 ```
 
+
+
+### business Model
+Membuat Modal bisnis
+```
+CREATE TABLE businesses (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(150) NOT NULL,           -- "Jualan Gorengan", "Dropship Baju", dll
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'active',  -- 'active', 'inactive'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index
+CREATE INDEX idx_businesses_user ON businesses(user_id);
+```
+
+```
+CREATE TABLE business_capitals (
+    id SERIAL PRIMARY KEY,
+    business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+    amount DECIMAL(15, 2) NOT NULL CHECK (amount > 0),
+    description TEXT,
+    capital_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_business_capitals_business ON business_capitals(business_id);
+```
+
+
+```
+CREATE TABLE business_transactions (
+    id SERIAL PRIMARY KEY,
+    business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES categories(id),  -- ✅ Reuse categories existing
+    amount DECIMAL(15, 2) NOT NULL CHECK (amount > 0),
+    transaction_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_business_transactions_business ON business_transactions(business_id);
+CREATE INDEX idx_business_transactions_date ON business_transactions(transaction_date);
+```
