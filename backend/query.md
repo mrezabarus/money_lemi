@@ -3,15 +3,17 @@
 #### Table User
 ```sql
 -- Tabel users (tanpa kolom role)
-create table users (
-	id SERIAL primary key,
-	name varchar (100) not null,
-	email varchar (150) unique not null,
-	password varchar (255) not null,
-	parent_id INTEGER REFERENCES users(id) ON DELETE SET NULL,  -- NULL = bukan anak
-	created_at TIMESTAMP default CURRENT_TIMESTAMP,
-	updated_at TIMESTAMP default CURRENT_TIMESTAMP,
-	is_active BOOLEAN default true 
+-- Struktur users tetap sederhana
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+    parent_id INTEGER REFERENCES users(id) ON DELETE SET NULL,  -- ✅ Cukup ini saja!
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE
 );
 
 -- Index untuk email (pencarian cepat saat login)
@@ -31,6 +33,23 @@ SELECT
 FROM users u;
 
 SELECT * FROM users_with_role;
+
+-- Step 1: Parent buat invitation (temporary table)
+CREATE TABLE child_invitations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    parent_id INTEGER NOT NULL REFERENCES users(id),
+    child_email VARCHAR(150) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',  -- 'pending', 'accepted', 'expired'
+    expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP + INTERVAL '7 days',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Step 2: Anak terima email → klik link → buat akun
+INSERT INTO users (name, email, password, role, parent_id) VALUES
+('Ani', 'ani@email.com', 'hashed_new_pwd', 'user', 1);  -- parent_id langsung di-set
+
+-- Step 3: Update invitation status
+UPDATE child_invitations SET status = 'accepted' WHERE id = '...';
 
 ALTER TABLE users 
 ADD COLUMN role VARCHAR(50) DEFAULT 'user';
