@@ -11,12 +11,11 @@ INSERT INTO users (name, email, password, role, parent_id) VALUES
 NULL);
 
 -- Orang tua
-INSERT INTO users (name, email, password, role, parent_id) VALUES
+INSERT INTO users (name, email, password, role) VALUES
 (
 	'Budi', 
 	'budi@email.com', 
 	'$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzS3MebAJu', -- password: admin123
-	'user', 
 NULL);
 
 -- Anak
